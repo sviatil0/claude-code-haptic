@@ -1,0 +1,78 @@
+{
+  "name": "claude-code-haptic",
+  "displayName": "Claude Code Haptic",
+  "description": "Trackpad haptic feedback + sound notification when Claude Code needs your input or finishes responding.",
+  "version": "0.1.0",
+  "publisher": "sviatil0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sviatil0/claude-code-haptic.git"
+  },
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": ["Other"],
+  "keywords": ["claude", "claude-code", "haptic", "notification", "macos"],
+  "os": ["darwin"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "claudeCodeHaptic.install",
+        "title": "Claude Code Haptic: Install hooks into ~/.claude/settings.json"
+      },
+      {
+        "command": "claudeCodeHaptic.uninstall",
+        "title": "Claude Code Haptic: Remove hooks from ~/.claude/settings.json"
+      },
+      {
+        "command": "claudeCodeHaptic.test",
+        "title": "Claude Code Haptic: Test buzz + sound"
+      },
+      {
+        "command": "claudeCodeHaptic.installBackend",
+        "title": "Claude Code Haptic: Install mactic backend (Homebrew)"
+      }
+    ],
+    "configuration": {
+      "title": "Claude Code Haptic",
+      "properties": {
+        "claudeCodeHaptic.notificationSound": {
+          "type": "string",
+          "default": "Frog",
+          "enum": ["Basso", "Blow", "Bottle", "Frog", "Funk", "Glass", "Hero", "Morse", "Ping", "Pop", "Purr", "Sosumi", "Submarine", "Tink", "none"],
+          "description": "Sound played when Claude needs input."
+        },
+        "claudeCodeHaptic.stopSound": {
+          "type": "string",
+          "default": "Hero",
+          "enum": ["Basso", "Blow", "Bottle", "Frog", "Funk", "Glass", "Hero", "Morse", "Ping", "Pop", "Purr", "Sosumi", "Submarine", "Tink", "none"],
+          "description": "Sound played when Claude finishes responding."
+        },
+        "claudeCodeHaptic.haptic": {
+          "type": "string",
+          "default": "auto",
+          "enum": ["auto", "mactic", "nshaptic", "off"],
+          "description": "Haptic backend. 'auto' = mactic if installed else nshaptic .app fallback."
+        },
+        "claudeCodeHaptic.hapticPulses": {
+          "type": "number",
+          "default": 3,
+          "description": "Number of haptic pulses per event."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "watch": "tsc -w -p .",
+    "vscode:prepublish": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.80.0",
+    "typescript": "^5.4.0"
+  }
+}

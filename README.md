@@ -13,6 +13,12 @@ Wraps Apple's `NSHapticFeedbackManager` in a tiny `.app` bundle so it works from
 
 ## Install
 
+### Option A — VS Code extension (recommended)
+
+Search **Claude Code Haptic** in the Marketplace, or sideload from `vscode-extension/`. Then run `Claude Code Haptic: Install hooks` from the Command Palette. See [vscode-extension/README.md](vscode-extension/README.md).
+
+### Option B — Shell installer
+
 ```bash
 git clone https://github.com/sviatil0/claude-code-haptic.git
 cd claude-code-haptic
@@ -20,6 +26,17 @@ cd claude-code-haptic
 ```
 
 This builds `~/.claude/bin/Haptic.app` and prints the hook snippet to add to your Claude Code settings.
+
+### Recommended backend on Apple Silicon
+
+`NSHapticFeedbackManager` is unreliable from background hooks on M-series Macs. Install [mactic](https://github.com/MatMercer/mactic) for direct actuator control:
+
+```bash
+brew tap matmercer/tap && brew install mactic
+mactic -w 2   # test
+```
+
+Then set hook command to use `mactic -w 2` instead of `open -gW Haptic.app`.
 
 ## Test
 

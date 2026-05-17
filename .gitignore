@@ -6,3 +6,6 @@ build/
 .build/
 Packages/
 *.xcworkspace
+node_modules/
+out/
+*.vsix
