@@ -34,11 +34,21 @@
       {
         "command": "claudeCodeHaptic.installBackend",
         "title": "Claude Code Haptic: Install mactic backend (Homebrew)"
+      },
+      {
+        "command": "claudeCodeHaptic.openSettings",
+        "title": "Claude Code Haptic: Open settings"
       }
     ],
     "configuration": {
       "title": "Claude Code Haptic",
       "properties": {
+        "claudeCodeHaptic.mode": {
+          "type": "string",
+          "default": "both",
+          "enum": ["sound", "vibration", "both", "off"],
+          "description": "What fires on Claude events: sound, trackpad vibration, both, or off."
+        },
         "claudeCodeHaptic.notificationSound": {
           "type": "string",
           "default": "Frog",
@@ -50,6 +60,13 @@
           "default": "Hero",
           "enum": ["Basso", "Blow", "Bottle", "Frog", "Funk", "Glass", "Hero", "Morse", "Ping", "Pop", "Purr", "Sosumi", "Submarine", "Tink", "none"],
           "description": "Sound played when Claude finishes responding."
+        },
+        "claudeCodeHaptic.soundVolume": {
+          "type": "number",
+          "default": 1.0,
+          "minimum": 0,
+          "maximum": 5,
+          "description": "Sound volume (afplay -v). 0=silent, 1=normal, up to 5=amplified."
         },
         "claudeCodeHaptic.haptic": {
           "type": "string",
@@ -80,11 +97,14 @@
   "scripts": {
     "compile": "tsc -p .",
     "watch": "tsc -w -p .",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "vscode:prepublish": "npm run compile"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.80.0",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
   }
 }
