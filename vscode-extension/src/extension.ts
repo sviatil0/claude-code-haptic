@@ -18,7 +18,9 @@ function buildCommand(event: "notification" | "stop"): string {
       ? cfg.get<string>("notificationSound", "Frog")
       : cfg.get<string>("stopSound", "Hero");
   const haptic = cfg.get<string>("haptic", "auto");
-  const pulses = cfg.get<number>("hapticPulses", 3);
+  const pulses = cfg.get<number>("hapticPulses", 5);
+  const waveform = cfg.get<number>("hapticWaveform", 6);
+  const interval = cfg.get<number>("hapticIntervalMs", 50);
 
   const parts: string[] = [];
   const macticPath = "/opt/homebrew/bin/mactic";
@@ -26,9 +28,7 @@ function buildCommand(event: "notification" | "stop"): string {
 
   if (haptic !== "off") {
     if (haptic === "mactic" || (haptic === "auto" && fs.existsSync(macticPath))) {
-      for (let i = 0; i < pulses; i++) {
-        parts.push(`${macticPath} -w 2`);
-      }
+      parts.push(`${macticPath} -r ${pulses} -i ${interval} -w ${waveform}`);
     } else if (haptic === "nshaptic" || haptic === "auto") {
       parts.push(`open -gW "${fallbackApp}"`);
     }
