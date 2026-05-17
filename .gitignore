@@ -1,0 +1,8 @@
+build/
+*.app
+*.dSYM
+.DS_Store
+*.xcodeproj/xcuserdata/
+.build/
+Packages/
+*.xcworkspace
