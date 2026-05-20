@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { buildCommand, resolveMacticPath, HapticConfig } from "../src/hookBuilder";
+import {
+  buildCommand,
+  resolveMacticPath,
+  resolveTerminalNotifierPath,
+  HapticConfig,
+} from "../src/hookBuilder";
 
 const baseCfg: HapticConfig = {
   mode: "both",
@@ -103,6 +108,41 @@ describe("buildCommand", () => {
       (p) => p === "/usr/local/bin/mactic"
     );
     expect(cmd).toContain("/usr/local/bin/mactic");
+  });
+});
+
+describe("terminal-notifier integration", () => {
+  const tnExists = (p: string) => p === "/opt/homebrew/bin/terminal-notifier";
+
+  it("uses terminal-notifier with -activate when available", () => {
+    const cmd = buildCommand("notification", { ...baseCfg, mode: "off" }, tnExists);
+    expect(cmd).toContain("/opt/homebrew/bin/terminal-notifier");
+    expect(cmd).toContain("-activate com.microsoft.VSCode");
+    expect(cmd).not.toContain("osascript");
+  });
+
+  it("falls back to osascript when terminal-notifier missing", () => {
+    const cmd = buildCommand("notification", { ...baseCfg, mode: "off" }, () => false);
+    expect(cmd).toContain("osascript");
+    expect(cmd).not.toContain("terminal-notifier");
+  });
+});
+
+describe("resolveTerminalNotifierPath", () => {
+  it("finds arm64 homebrew path", () => {
+    expect(
+      resolveTerminalNotifierPath(undefined, (p) => p === "/opt/homebrew/bin/terminal-notifier")
+    ).toBe("/opt/homebrew/bin/terminal-notifier");
+  });
+
+  it("finds Intel homebrew path", () => {
+    expect(
+      resolveTerminalNotifierPath(undefined, (p) => p === "/usr/local/bin/terminal-notifier")
+    ).toBe("/usr/local/bin/terminal-notifier");
+  });
+
+  it("returns undefined when absent", () => {
+    expect(resolveTerminalNotifierPath(undefined, () => false)).toBeUndefined();
   });
 });
 

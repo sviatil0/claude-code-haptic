@@ -24,7 +24,14 @@ Command Palette (`Cmd+Shift+P`) → run any of:
 - **Claude Code Haptic: Install hooks** — writes `Notification` + `Stop` hooks into `~/.claude/settings.json`
 - **Claude Code Haptic: Test buzz + sound** — fires once so you can verify it works
 - **Claude Code Haptic: Install mactic backend** — opens terminal and runs `brew tap matmercer/tap && brew install mactic` (recommended on Apple Silicon for reliable haptic)
+- **Claude Code Haptic: Focus a Claude session window** — quick-pick of open VS Code windows; select one to bring it to the front
 - **Claude Code Haptic: Remove hooks** — clean uninstall
+
+## Clickable notifications
+
+If [`terminal-notifier`](https://github.com/julienXX/terminal-notifier) is installed (`brew install terminal-notifier`), clicking a notification banner brings VS Code to the front. Without it, the extension falls back to plain `osascript` notifications that are not clickable.
+
+The **Focus a Claude session window** command lists every open VS Code window by workspace folder, so when several Claude sessions are running you can jump straight to the one that needs you. Raising a *specific* window (vs. just the app) requires Accessibility permission — grant it in System Settings → Privacy & Security → Accessibility. Without the permission it still focuses the VS Code app.
 
 ## Settings
 

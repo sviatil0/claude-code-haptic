@@ -14,10 +14,15 @@ export interface HapticConfig {
   hapticWaveform: number;
   hapticIntervalMs: number;
   macticPathOverride?: string;
+  terminalNotifierPathOverride?: string;
   fallbackAppPath: string;
 }
 
 const MACTIC_CANDIDATES = ["/opt/homebrew/bin/mactic", "/usr/local/bin/mactic"];
+const TERMINAL_NOTIFIER_CANDIDATES = [
+  "/opt/homebrew/bin/terminal-notifier",
+  "/usr/local/bin/terminal-notifier",
+];
 
 export function resolveMacticPath(
   override: string | undefined,
@@ -25,6 +30,14 @@ export function resolveMacticPath(
 ): string | undefined {
   if (override && exists(override)) return override;
   return MACTIC_CANDIDATES.find(exists);
+}
+
+export function resolveTerminalNotifierPath(
+  override: string | undefined,
+  exists: (p: string) => boolean = fs.existsSync
+): string | undefined {
+  if (override && exists(override)) return override;
+  return TERMINAL_NOTIFIER_CANDIDATES.find(exists);
 }
 
 function safeNumber(v: unknown, fallback: number): number {
@@ -69,9 +82,17 @@ export function buildCommand(
   }
 
   const title = event === "notification" ? "Claude needs your input" : "Claude finished responding";
-  parts.push(
-    `osascript -e ${shellQuote(`display notification "${title}" with title "Claude Code"`)}`
-  );
+  const tnPath = resolveTerminalNotifierPath(cfg.terminalNotifierPathOverride, exists);
+  if (tnPath) {
+    parts.push(
+      `${shellQuote(tnPath)} -title 'Claude Code' -message ${shellQuote(title)} ` +
+        `-activate com.microsoft.VSCode -sender com.microsoft.VSCode`
+    );
+  } else {
+    parts.push(
+      `osascript -e ${shellQuote(`display notification "${title}" with title "Claude Code"`)}`
+    );
+  }
 
   if (parts.length === 0) return "true";
   return parts.join(" & ") + "; wait";

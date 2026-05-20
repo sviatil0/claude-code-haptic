@@ -2,7 +2,7 @@
   "name": "claude-code-haptic",
   "displayName": "Claude Code Haptic",
   "description": "Trackpad haptic feedback + sound notification when Claude Code needs your input or finishes responding.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "sviatil0",
   "license": "MIT",
   "icon": "images/icon.png",
@@ -43,6 +43,10 @@
       {
         "command": "claudeCodeHaptic.openSettings",
         "title": "Claude Code Haptic: Open settings"
+      },
+      {
+        "command": "claudeCodeHaptic.pickSession",
+        "title": "Claude Code Haptic: Focus a Claude session window"
       }
     ],
     "configuration": {

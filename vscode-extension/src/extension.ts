@@ -5,6 +5,7 @@ import {
   testBuzz,
   installBackend,
   openSettings,
+  pickSession,
 } from "./commands";
 
 function guard<T extends (...args: any[]) => any>(fn: T): T {
@@ -25,7 +26,8 @@ export function activate(ctx: vscode.ExtensionContext): void {
     vscode.commands.registerCommand("claudeCodeHaptic.uninstall", guard(uninstallHooks)),
     vscode.commands.registerCommand("claudeCodeHaptic.test", guard(testBuzz)),
     vscode.commands.registerCommand("claudeCodeHaptic.installBackend", guard(installBackend)),
-    vscode.commands.registerCommand("claudeCodeHaptic.openSettings", openSettings)
+    vscode.commands.registerCommand("claudeCodeHaptic.openSettings", openSettings),
+    vscode.commands.registerCommand("claudeCodeHaptic.pickSession", guard(pickSession))
   );
 }
 

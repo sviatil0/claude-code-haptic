@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import * as os from "os";
-import { spawn } from "child_process";
+import { spawn, execFile } from "child_process";
 import { buildCommand, HapticConfig } from "./hookBuilder";
 import {
   readSettings,
@@ -11,6 +11,7 @@ import {
   SettingsParseError,
   SettingsWriteError,
 } from "./settingsStore";
+import { listVsCodeWindows, AccessibilityError } from "./windows";
 
 export const SETTINGS_PATH = path.join(os.homedir(), ".claude", "settings.json");
 
@@ -107,4 +108,53 @@ export function installBackend(): void {
 
 export function openSettings(): void {
   vscode.commands.executeCommand("workbench.action.openSettings", "claudeCodeHaptic");
+}
+
+function focusVsCodeWindow(workspace: string): void {
+  const script = path.join(__dirname, "..", "scripts", "focus-vscode-window.sh");
+  execFile("bash", [script, workspace], (err) => {
+    if (err) {
+      vscode.window.showErrorMessage(`Could not focus window: ${err.message}`);
+    }
+  });
+}
+
+export async function pickSession(): Promise<void> {
+  let windows;
+  try {
+    windows = await listVsCodeWindows();
+  } catch (err) {
+    if (err instanceof AccessibilityError) {
+      const sel = await vscode.window.showErrorMessage(
+        err.message,
+        "Open Accessibility Settings"
+      );
+      if (sel) {
+        await vscode.commands.executeCommand(
+          "vscode.open",
+          vscode.Uri.parse(
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+          )
+        );
+      }
+      return;
+    }
+    throw err;
+  }
+
+  if (windows.length === 0) {
+    vscode.window.showInformationMessage("No VS Code windows found.");
+    return;
+  }
+
+  const items = windows.map((w) => ({
+    label: w.workspace,
+    description: w.title !== w.workspace ? w.title : undefined,
+    workspace: w.workspace,
+  }));
+
+  const picked = await vscode.window.showQuickPick(items, {
+    placeHolder: "Select a Claude Code session window to focus",
+  });
+  if (picked) focusVsCodeWindow(picked.workspace);
 }
