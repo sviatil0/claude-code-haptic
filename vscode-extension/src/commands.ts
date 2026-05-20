@@ -240,12 +240,30 @@ export function focusSession(session: Session): void {
  * waiting/finished session and no longer wants it listed.
  */
 export function resumeSession(session: Session): void {
-  removeSession(session.id);
+  try {
+    removeSession(session.id);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    vscode.window.showErrorMessage(
+      `Claude Code Haptic: couldn't update the session file — ${msg}`
+    );
+  }
   focusVsCodeWindow(session.label);
 }
 
 export function clearFinishedSessions(): void {
-  for (const s of readSessions()) {
-    if (s.status === "done") removeSession(s.id);
+  const failures: string[] = [];
+  for (const s of readSessions().sessions) {
+    if (s.status !== "done") continue;
+    try {
+      removeSession(s.id);
+    } catch (err) {
+      failures.push(err instanceof Error ? err.message : String(err));
+    }
+  }
+  if (failures.length > 0) {
+    vscode.window.showErrorMessage(
+      `Claude Code Haptic: couldn't clear ${failures.length} session(s) — ${failures[0]}`
+    );
   }
 }

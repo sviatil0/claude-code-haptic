@@ -12,21 +12,30 @@
 # ~/.claude/haptic-sessions.json. The VS Code extension watches that
 # file and renders one row per session.
 #
-# The state file shape:
-#   { "sessions": { "<session_id>": {
-#       "id": "...", "cwd": "...", "label": "...",
-#       "status": "...", "updated": <epoch-seconds> } } }
+# On any failure the script appends a line to ~/.claude/haptic-session-writer.log
+# so the extension can detect that tracking is broken and warn the user.
+# It always exits 0 so it never blocks the rest of the hook command.
+#
+# Concurrency: two hooks firing at the same instant do a read-modify-write
+# on the same file; last write wins, so one session's update can be lost
+# for one tick. The next hook for that session repairs it. This is
+# accepted — hook frequency is low and user-driven.
 
 set -uo pipefail
 
 STATUS="${1:-waiting}"
 STATE_FILE="${HOME}/.claude/haptic-sessions.json"
+LOG_FILE="${HOME}/.claude/haptic-session-writer.log"
 
-# The hook payload is a single JSON line on stdin. Pass it plus the
-# status and state-file path to Python, which does the parse + upsert.
+note_failure() {
+  mkdir -p "${HOME}/.claude" 2>/dev/null || true
+  printf '%s  %s\n' "$(date '+%Y-%m-%dT%H:%M:%S')" "$1" >>"$LOG_FILE" 2>/dev/null || true
+  echo "haptic session-writer: $1" >&2
+}
+
 PAYLOAD="$(cat)"
 
-STATUS="$STATUS" STATE_FILE="$STATE_FILE" PAYLOAD="$PAYLOAD" python3 - <<'PYEOF'
+if ! STATUS="$STATUS" STATE_FILE="$STATE_FILE" PAYLOAD="$PAYLOAD" python3 - <<'PYEOF'
 import json, os, sys, time, pathlib
 
 status = os.environ["STATUS"]
@@ -36,9 +45,16 @@ payload_raw = os.environ.get("PAYLOAD", "")
 try:
     payload = json.loads(payload_raw) if payload_raw.strip() else {}
 except json.JSONDecodeError:
-    payload = {}
+    sys.stderr.write("payload is not valid JSON\n")
+    sys.exit(1)
 
-session_id = payload.get("session_id") or "unknown"
+session_id = payload.get("session_id")
+if not session_id:
+    # Never invent a key — an "unknown" id would collapse every
+    # unidentified session into one row, masking real data.
+    sys.stderr.write("payload missing session_id; not recording\n")
+    sys.exit(1)
+
 cwd = payload.get("cwd") or os.getcwd()
 label = os.path.basename(cwd.rstrip("/")) or cwd
 
@@ -60,9 +76,13 @@ state["sessions"][session_id] = {
     "updated": int(time.time()),
 }
 
-# Atomic write: tmp file + rename.
 state_file.parent.mkdir(parents=True, exist_ok=True)
 tmp = state_file.with_suffix(f".tmp-{os.getpid()}")
 tmp.write_text(json.dumps(state, indent=2) + "\n")
 tmp.replace(state_file)
 PYEOF
+then
+  note_failure "could not record session (python3 missing, bad payload, or write error)"
+fi
+
+exit 0

@@ -2,7 +2,7 @@
   "name": "claude-code-haptic",
   "displayName": "Claude Code Haptic",
   "description": "Trackpad haptic feedback + sound notification when Claude Code needs your input or finishes responding.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "publisher": "sviatil0",
   "license": "MIT",
   "icon": "images/icon.png",

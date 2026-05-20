@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.3.1
+
+- Session writer no longer invents an "unknown" id when the payload is
+  bad — it skips the write so failed sessions can't collapse into one
+  masked row.
+- Writer logs failures to `~/.claude/haptic-session-writer.log` and
+  always exits 0 so it never blocks the rest of the hook.
+- Panel warns once when the session file is corrupt instead of silently
+  showing an empty list.
+- Session file watcher retries every 5s if `~/.claude` does not exist
+  yet, so tracking starts without a VS Code restart.
+- `resumeSession` / `clearFinished` surface write errors instead of
+  failing with a raw "command failed" toast.
+
 ## 0.3.0
 
 - **Claude Sessions panel**: a new view in the activity bar lists every

@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
+import * as path from "path";
 import { Session, SessionStatus, readSessions, SESSIONS_PATH } from "./sessionStore";
 
 const STATUS_ICON: Record<SessionStatus, string> = {
@@ -34,6 +35,8 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<SessionItem>
   readonly onDidChangeTreeData = this._onDidChange.event;
 
   private watcher: fs.FSWatcher | undefined;
+  private retryTimer: NodeJS.Timeout | undefined;
+  private warnedParseError = false;
 
   constructor() {
     this.startWatching();
@@ -44,29 +47,53 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<SessionItem>
   }
 
   getChildren(): SessionItem[] {
-    return readSessions().map((s) => new SessionItem(s));
+    const { sessions, parseError } = readSessions();
+    if (parseError && !this.warnedParseError) {
+      this.warnedParseError = true;
+      vscode.window.showWarningMessage(
+        "Claude Code Haptic: the session file is unreadable — the panel may be incomplete."
+      );
+    } else if (!parseError) {
+      this.warnedParseError = false;
+    }
+    return sessions.map((s) => new SessionItem(s));
   }
 
   refresh(): void {
     this._onDidChange.fire();
   }
 
+  /**
+   * Watch the ~/.claude directory (not the file) so the writer's atomic
+   * tmp+rename still produces an event. If the directory does not exist
+   * yet, retry on a timer so tracking starts working once the first hook
+   * creates ~/.claude — without requiring a VS Code restart.
+   */
   private startWatching(): void {
-    // fs.watch on the directory survives the atomic rename the writer
-    // performs (watching the file directly breaks after a rename).
-    const dir = SESSIONS_PATH.slice(0, SESSIONS_PATH.lastIndexOf("/"));
+    if (this.watcher) return;
+    const dir = path.dirname(SESSIONS_PATH);
+    const fileName = path.basename(SESSIONS_PATH);
     try {
       this.watcher = fs.watch(dir, (_event, filename) => {
-        if (filename === "haptic-sessions.json") this.refresh();
+        if (filename === fileName) this.refresh();
       });
+      if (this.retryTimer) {
+        clearTimeout(this.retryTimer);
+        this.retryTimer = undefined;
+      }
+      this.refresh();
     } catch {
-      // Directory may not exist yet; the panel simply shows nothing
-      // until the first hook fires and creates ~/.claude.
+      // Directory missing or watch limit hit — retry shortly.
+      this.retryTimer = setTimeout(() => {
+        this.retryTimer = undefined;
+        this.startWatching();
+      }, 5000);
     }
   }
 
   dispose(): void {
     this.watcher?.close();
+    if (this.retryTimer) clearTimeout(this.retryTimer);
     this._onDidChange.dispose();
   }
 }
