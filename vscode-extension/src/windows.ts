@@ -25,6 +25,22 @@ export class AccessibilityError extends Error {
   }
 }
 
+export class AutomationError extends Error {
+  constructor() {
+    super(
+      "Automation permission required. Grant it in System Settings > Privacy & Security > Automation for your editor."
+    );
+    this.name = "AutomationError";
+  }
+}
+
+export class WindowListError extends Error {
+  constructor(cause: unknown) {
+    super(`Could not list VS Code windows: ${(cause as Error).message ?? cause}`);
+    this.name = "WindowListError";
+  }
+}
+
 /**
  * VS Code window titles look like:
  *   "extension.ts — claude-code-haptic"
@@ -39,6 +55,36 @@ export function workspaceFromTitle(title: string): string {
 export interface VsCodeWindow {
   title: string;
   workspace: string;
+  isCurrent?: boolean;
+}
+
+/**
+ * Merge the System Events window list with the current window's clean label
+ * (from the VS Code API). macOS truncates AX window titles with an ellipsis,
+ * so the current window may appear under a truncated, unrecognizable name —
+ * or its truncated title may match nothing. This guarantees exactly one
+ * entry is flagged `isCurrent` with a full, readable label.
+ */
+export function withCurrentWindow(
+  windows: VsCodeWindow[],
+  currentLabel: string
+): VsCodeWindow[] {
+  const ELLIPSIS = "…";
+  const currentEntry: VsCodeWindow = {
+    title: currentLabel,
+    workspace: currentLabel,
+    isCurrent: true,
+  };
+
+  // Drop any enumerated window that is a truncated prefix of the current
+  // label (the OS-truncated version of the same window) to avoid duplicates.
+  const deduped = windows.filter((w) => {
+    if (!w.title.endsWith(ELLIPSIS)) return true;
+    const prefix = w.title.slice(0, -1).trimEnd();
+    return !currentLabel.startsWith(prefix);
+  });
+
+  return [currentEntry, ...deduped];
 }
 
 export async function listVsCodeWindows(
@@ -61,6 +107,9 @@ async function defaultRunOsascript(script: string): Promise<string> {
     if (msg.includes("-1728") || msg.includes("assistive access")) {
       throw new AccessibilityError();
     }
-    throw err;
+    if (msg.includes("-1743") || msg.includes("Not authorized to send")) {
+      throw new AutomationError();
+    }
+    throw new WindowListError(err);
   }
 }

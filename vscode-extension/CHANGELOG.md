@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.1
+
+- Focus script now reports a status sentinel (RAISED / NO_MATCH / NO_AX /
+  APP_ONLY); the picker surfaces a warning when a window can't be raised
+  instead of silently doing nothing.
+- Strip the macOS truncation ellipsis from the match needle so long
+  window titles can still be matched.
+- Map the Automation-permission error (-1743) to an actionable message
+  with an "Open Automation Settings" action; wrap other osascript
+  failures in a clear WindowListError.
+
 ## 0.2.0
 
 - Clickable notifications: when `terminal-notifier` is installed, clicking the

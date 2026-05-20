@@ -11,7 +11,13 @@ import {
   SettingsParseError,
   SettingsWriteError,
 } from "./settingsStore";
-import { listVsCodeWindows, AccessibilityError } from "./windows";
+import {
+  listVsCodeWindows,
+  withCurrentWindow,
+  AccessibilityError,
+  AutomationError,
+  WindowListError,
+} from "./windows";
 
 export const SETTINGS_PATH = path.join(os.homedir(), ".claude", "settings.json");
 
@@ -112,9 +118,29 @@ export function openSettings(): void {
 
 function focusVsCodeWindow(workspace: string): void {
   const script = path.join(__dirname, "..", "scripts", "focus-vscode-window.sh");
-  execFile("bash", [script, workspace], (err) => {
+  execFile("bash", [script, workspace], (err, stdout) => {
     if (err) {
       vscode.window.showErrorMessage(`Could not focus window: ${err.message}`);
+      return;
+    }
+    const status = stdout.trim();
+    switch (status) {
+      case "RAISED":
+      case "APP_ONLY":
+        return;
+      case "NO_MATCH":
+        vscode.window.showWarningMessage(
+          `Brought VS Code forward, but no window matched "${workspace}".`
+        );
+        return;
+      case "NO_AX":
+        vscode.window.showWarningMessage(
+          "Brought VS Code forward, but couldn't raise that specific window. " +
+            "Grant Accessibility permission to focus individual windows."
+        );
+        return;
+      default:
+        return;
     }
   });
 }
@@ -139,16 +165,37 @@ export async function pickSession(): Promise<void> {
       }
       return;
     }
+    if (err instanceof AutomationError) {
+      const sel = await vscode.window.showErrorMessage(
+        err.message,
+        "Open Automation Settings"
+      );
+      if (sel) {
+        await vscode.commands.executeCommand(
+          "vscode.open",
+          vscode.Uri.parse(
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation"
+          )
+        );
+      }
+      return;
+    }
+    if (err instanceof WindowListError) {
+      vscode.window.showErrorMessage(err.message);
+      return;
+    }
     throw err;
   }
 
-  if (windows.length === 0) {
+  const merged = withCurrentWindow(windows, currentWindowLabel());
+
+  if (merged.length === 0) {
     vscode.window.showInformationMessage("No VS Code windows found.");
     return;
   }
 
-  const items = windows.map((w) => ({
-    label: w.workspace,
+  const items = merged.map((w) => ({
+    label: w.isCurrent ? `$(check) ${w.workspace}  (this window)` : w.workspace,
     description: w.title !== w.workspace ? w.title : undefined,
     workspace: w.workspace,
   }));
@@ -157,4 +204,17 @@ export async function pickSession(): Promise<void> {
     placeHolder: "Select a Claude Code session window to focus",
   });
   if (picked) focusVsCodeWindow(picked.workspace);
+}
+
+/**
+ * The current window's title is truncated by macOS in the System Events
+ * enumeration. The VS Code API gives us a clean, full name for it, so we
+ * label it explicitly instead of relying on the truncated AX title.
+ */
+export function currentWindowLabel(): string {
+  const ws = vscode.workspace.name;
+  if (ws) return ws;
+  const folders = vscode.workspace.workspaceFolders;
+  if (folders && folders.length > 0) return folders[0].name;
+  return "Untitled (this window)";
 }
