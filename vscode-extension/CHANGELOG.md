@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.0
+
+- **Claude Sessions panel**: a new view in the activity bar lists every
+  Claude Code session with its status — working, waiting for input, or
+  finished. Click a row to focus that session's VS Code window.
+- Hooks now record session status (session id + workspace) into
+  `~/.claude/haptic-sessions.json` via the bundled `session-writer.sh`;
+  the panel watches that file and updates live.
+- Panel actions: refresh, clear finished sessions, and "Focus & dismiss"
+  on each row.
+- New setting `claudeCodeHaptic.trackSessions` (default on) — re-run
+  "Install hooks" after toggling.
+
 ## 0.2.1
 
 - Focus script now reports a status sentinel (RAISED / NO_MATCH / NO_AX /

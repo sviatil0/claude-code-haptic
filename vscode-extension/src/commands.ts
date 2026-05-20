@@ -18,11 +18,18 @@ import {
   AutomationError,
   WindowListError,
 } from "./windows";
+import { Session, removeSession, readSessions } from "./sessionStore";
 
 export const SETTINGS_PATH = path.join(os.homedir(), ".claude", "settings.json");
 
+/** Absolute path to a bundled script (out/ -> ../scripts/<name>). */
+function scriptPath(name: string): string {
+  return path.join(__dirname, "..", "scripts", name);
+}
+
 function loadConfig(): HapticConfig {
   const c = vscode.workspace.getConfiguration("claudeCodeHaptic");
+  const trackSessions = c.get("trackSessions", true);
   return {
     mode: c.get("mode", "both"),
     notificationSound: c.get("notificationSound", "Frog"),
@@ -33,6 +40,7 @@ function loadConfig(): HapticConfig {
     hapticWaveform: c.get("hapticWaveform", 6),
     hapticIntervalMs: c.get("hapticIntervalMs", 50),
     fallbackAppPath: path.join(os.homedir(), ".claude/bin/Haptic.app"),
+    sessionWriterPath: trackSessions ? scriptPath("session-writer.sh") : undefined,
   };
 }
 
@@ -117,7 +125,7 @@ export function openSettings(): void {
 }
 
 function focusVsCodeWindow(workspace: string): void {
-  const script = path.join(__dirname, "..", "scripts", "focus-vscode-window.sh");
+  const script = scriptPath("focus-vscode-window.sh");
   execFile("bash", [script, workspace], (err, stdout) => {
     if (err) {
       vscode.window.showErrorMessage(`Could not focus window: ${err.message}`);
@@ -217,4 +225,27 @@ export function currentWindowLabel(): string {
   const folders = vscode.workspace.workspaceFolders;
   if (folders && folders.length > 0) return folders[0].name;
   return "Untitled (this window)";
+}
+
+/**
+ * Focus the VS Code window for a tracked session (clicked in the panel).
+ * Matches the window whose title contains the session's workspace label.
+ */
+export function focusSession(session: Session): void {
+  focusVsCodeWindow(session.label);
+}
+
+/**
+ * Drop a session from the panel — used when the user has dealt with a
+ * waiting/finished session and no longer wants it listed.
+ */
+export function resumeSession(session: Session): void {
+  removeSession(session.id);
+  focusVsCodeWindow(session.label);
+}
+
+export function clearFinishedSessions(): void {
+  for (const s of readSessions()) {
+    if (s.status === "done") removeSession(s.id);
+  }
 }

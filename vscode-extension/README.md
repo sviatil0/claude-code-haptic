@@ -27,6 +27,18 @@ Command Palette (`Cmd+Shift+P`) → run any of:
 - **Claude Code Haptic: Focus a Claude session window** — quick-pick of open VS Code windows; select one to bring it to the front
 - **Claude Code Haptic: Remove hooks** — clean uninstall
 
+## Claude Sessions panel
+
+The activity bar gains a **Claude Sessions** view listing every Claude Code session and its status:
+
+- 🔔 **waiting for input** — Claude needs you
+- ⏳ **working** — still running
+- ✅ **finished** — done
+
+Click a row to focus that session's VS Code window. Use the inline **Focus & dismiss** action to jump in and drop it from the list, or **Clear finished sessions** in the view title to tidy up.
+
+Sessions are recorded by the hook into `~/.claude/haptic-sessions.json` (the `session-writer.sh` script reads the hook's `session_id` + `cwd`). The panel watches that file and updates live. Toggle with the `claudeCodeHaptic.trackSessions` setting; re-run **Install hooks** after changing it.
+
 ## Clickable notifications
 
 If [`terminal-notifier`](https://github.com/julienXX/terminal-notifier) is installed (`brew install terminal-notifier`), clicking a notification banner brings VS Code to the front. Without it, the extension falls back to plain `osascript` notifications that are not clickable.

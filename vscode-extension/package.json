@@ -2,7 +2,7 @@
   "name": "claude-code-haptic",
   "displayName": "Claude Code Haptic",
   "description": "Trackpad haptic feedback + sound notification when Claude Code needs your input or finishes responding.",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "publisher": "sviatil0",
   "license": "MIT",
   "icon": "images/icon.png",
@@ -47,8 +47,62 @@
       {
         "command": "claudeCodeHaptic.pickSession",
         "title": "Claude Code Haptic: Focus a Claude session window"
+      },
+      {
+        "command": "claudeCodeHaptic.refreshSessions",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "claudeCodeHaptic.clearFinished",
+        "title": "Clear finished sessions",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "claudeCodeHaptic.resumeSession",
+        "title": "Focus & dismiss",
+        "icon": "$(arrow-right)"
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "claudeCodeHaptic",
+          "title": "Claude Sessions",
+          "icon": "images/activity-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "claudeCodeHaptic": [
+        {
+          "id": "claudeCodeHapticSessions",
+          "name": "Claude Sessions",
+          "contextualTitle": "Claude Code Haptic"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "claudeCodeHaptic.refreshSessions",
+          "when": "view == claudeCodeHapticSessions",
+          "group": "navigation"
+        },
+        {
+          "command": "claudeCodeHaptic.clearFinished",
+          "when": "view == claudeCodeHapticSessions",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "claudeCodeHaptic.resumeSession",
+          "when": "view == claudeCodeHapticSessions",
+          "group": "inline"
+        }
+      ]
+    },
     "configuration": {
       "title": "Claude Code Haptic",
       "properties": {
@@ -57,6 +111,11 @@
           "default": "both",
           "enum": ["sound", "vibration", "both", "off"],
           "description": "What fires on Claude events: sound, trackpad vibration, both, or off."
+        },
+        "claudeCodeHaptic.trackSessions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Record each Claude session's status into ~/.claude/haptic-sessions.json so the Claude Sessions panel can list waiting/finished sessions. Re-run 'Install hooks' after changing."
         },
         "claudeCodeHaptic.notificationSound": {
           "type": "string",

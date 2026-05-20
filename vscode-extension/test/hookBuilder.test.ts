@@ -111,6 +111,40 @@ describe("buildCommand", () => {
   });
 });
 
+describe("session writer integration", () => {
+  it("prepends a synchronous session-writer call when path is set", () => {
+    const cmd = buildCommand(
+      "notification",
+      { ...baseCfg, sessionWriterPath: "/ext/scripts/session-writer.sh" },
+      macticExists
+    );
+    expect(cmd).toMatch(/^bash '\/ext\/scripts\/session-writer\.sh' waiting; /);
+  });
+
+  it("uses status 'done' for the stop event", () => {
+    const cmd = buildCommand(
+      "stop",
+      { ...baseCfg, sessionWriterPath: "/ext/scripts/session-writer.sh" },
+      macticExists
+    );
+    expect(cmd).toContain("session-writer.sh' done;");
+  });
+
+  it("omits the session writer when path is unset", () => {
+    const cmd = buildCommand("notification", baseCfg, macticExists);
+    expect(cmd).not.toContain("session-writer");
+  });
+
+  it("runs the writer before backgrounded alert parts", () => {
+    const cmd = buildCommand(
+      "notification",
+      { ...baseCfg, sessionWriterPath: "/ext/scripts/session-writer.sh" },
+      macticExists
+    );
+    expect(cmd.indexOf("session-writer")).toBeLessThan(cmd.indexOf("mactic"));
+  });
+});
+
 describe("terminal-notifier integration", () => {
   const tnExists = (p: string) => p === "/opt/homebrew/bin/terminal-notifier";
 

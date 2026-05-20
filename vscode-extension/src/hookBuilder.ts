@@ -16,6 +16,9 @@ export interface HapticConfig {
   macticPathOverride?: string;
   terminalNotifierPathOverride?: string;
   fallbackAppPath: string;
+  /** Absolute path to session-writer.sh; when set, the hook records
+   *  session status into ~/.claude/haptic-sessions.json for the panel. */
+  sessionWriterPath?: string;
 }
 
 const MACTIC_CANDIDATES = ["/opt/homebrew/bin/mactic", "/usr/local/bin/mactic"];
@@ -94,6 +97,14 @@ export function buildCommand(
     );
   }
 
-  if (parts.length === 0) return "true";
-  return parts.join(" & ") + "; wait";
+  const alerts = parts.length > 0 ? parts.join(" & ") + "; wait" : "true";
+
+  // The session writer must run first and synchronously: it is the only
+  // part that consumes the hook's stdin JSON (session_id, cwd). The alert
+  // parts are backgrounded and never read stdin, so ordering is safe.
+  if (cfg.sessionWriterPath) {
+    const status = event === "notification" ? "waiting" : "done";
+    return `bash ${shellQuote(cfg.sessionWriterPath)} ${status}; ${alerts}`;
+  }
+  return alerts;
 }
