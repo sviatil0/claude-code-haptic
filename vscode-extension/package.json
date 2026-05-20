@@ -5,16 +5,21 @@
   "version": "0.1.0",
   "publisher": "sviatil0",
   "license": "MIT",
+  "icon": "images/icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/sviatil0/claude-code-haptic.git"
   },
+  "bugs": {
+    "url": "https://github.com/sviatil0/claude-code-haptic/issues"
+  },
+  "homepage": "https://github.com/sviatil0/claude-code-haptic#readme",
+  "qna": "marketplace",
   "engines": {
     "vscode": "^1.80.0"
   },
   "categories": ["Other"],
-  "keywords": ["claude", "claude-code", "haptic", "notification", "macos"],
-  "os": ["darwin"],
+  "keywords": ["claude", "claude-code", "haptic", "notification", "macos", "vibration", "sound"],
   "activationEvents": ["onStartupFinished"],
   "main": "./out/extension.js",
   "contributes": {
